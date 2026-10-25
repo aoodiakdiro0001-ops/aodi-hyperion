@@ -1,0 +1,36 @@
+name: Aodı-Hyperion CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: zk · genetics · tensor sharding · sandbox · lineage (offline)
+        run: python3 tests/test_hyperion.py -v
+
+  go-mesh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: "1.21" }
+      - run: |
+          cd mesh
+          gofmt -w .
+          go vet ./...
+          go build ./...
+
+  node-relay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: node --check relay/relay.js

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aodı-Hyperion — لوحة الكائن الذاتي</title>
+<style>
+:root{--bg:#090b10;--card:#12161d;--line:#232a35;--txt:#e8eaed;--sub:#8d97a6;
+--ok:#22c55e;--warn:#f0b429;--bad:#ef4444;--acc:#8b5cf6;--acc2:#38bdf8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,"Segoe UI",Tahoma,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:var(--card);border-bottom:1px solid var(--line)}
+h1{font-size:18px}h1 span{color:var(--acc)}
+main{max-width:1080px;margin:0 auto;padding:22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card h3{font-size:12px;color:var(--sub);margin-bottom:8px;font-weight:600}
+.v{font-size:20px;font-weight:700}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+textarea{background:#0e1117;border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:9px 12px;font-size:13px;width:100%}
+textarea{min-height:64px;resize:vertical}
+button{background:var(--acc);color:#16062e;border:0;padding:9px 16px;border-radius:9px;font-weight:700;cursor:pointer;font-size:13px}
+.btn2{background:#283042;color:var(--txt)}
+.node,.task{border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0;background:var(--card);font-size:13px}
+.shard{font-size:12px;color:var(--sub)}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+.up{color:var(--ok)}.down{color:var(--bad)}
+.pill{display:inline-block;font-size:11px;border-radius:99px;padding:3px 10px;border:1px solid var(--line);margin:2px}
+a{color:var(--acc2);text-decoration:none}
+footer{color:var(--sub);font-size:12px;text-align:center;padding:18px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Aodı-<span>Hyperion</span> — لوحة الكائن الذاتي التطوري</h1>
+  <div id="ver" style="color:var(--sub);font-size:12px"></div>
+</header>
+<main>
+  <div class="grid">
+    <div class="card"><h3>عقد الشبكة (موقعة)</h3><div class="v" id="mesh">–</div></div>
+    <div class="card"><h3>إثباتات ZK</h3><div class="v" id="zk">–</div></div>
+    <div class="card"><h3>الجيل الأفضل</h3><div class="v" id="evo">–</div></div>
+    <div class="card"><h3>سلسلة النسابة</h3><div class="v" id="lineage">–</div></div>
+  </div>
+
+  <div class="card">
+    <h3>هدف للكائن (بناء → تحقق معزول → هيلر → ختم ZK)</h3>
+    <textarea id="goal" placeholder="مثال: اكتب دالة order_dedup تحافظ على ترتيب العناصر"></textarea>
+    <div class="row">
+      <button onclick="runOrganism()">أطلق الكائن</button>
+      <button class="btn2" onclick="evolve()">ورث جيلاً جديداً</button>
+      <button class="btn2" onclick="tensorRun()">شرد تنسورات العقد</button>
+      <button class="btn2" onclick="load()">تحديث</button>
+    </div>
+    <div id="tensor" class="shard"></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>طوبولوجيا الشبكة الموقعة (ecdsa-p256)</h3>
+    <div id="nodes">—</div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>مهام الكائن — مراحل حيّة</h3>
+    <div id="tasks">—</div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>مِسرج التطور (Genetic Engine)</h3>
+    <div id="evohist" class="shard">لم يبدأ بعد</div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>أحداث مباشرة</h3>
+    <div id="events" class="shard">—</div>
+  </div>
+</main>
+<footer>Aodı-Hyperion v1.0.0 · MIT © 2026 Baran Avisat · <a href="mailto:baranavisat@gmail.com">baranavisat@gmail.com</a> · <a href="https://wa.me/905313263722">WhatsApp +90 531 326 37 22</a></footer>
+<script>
+const API = location.origin;
+const esc = (s) => { const d = document.createElement("div"); d.textContent = String(s || ""); return d.innerHTML; };
+async function j(u, b) {
+  return fetch(u, b ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) } : undefined).then(r => r.json());
+}
+async function load() {
+  try {
+    const st = await j(API + "/api/state");
+    document.getElementById("ver").textContent = st.brand + " v" + st.version + " · " + st.zk.protocol;
+    const li = await j(API + "/api/lineage");
+    document.getElementById("lineage").textContent = li.verify.ok ? li.verify.size + " ✓" : "تداخل!";
+    const mesh = await j((st.mesh) + "/hy/mesh/health").catch(() => null);
+    document.getElementById("mesh").textContent = mesh ? mesh.peers_verified + " / " + mesh.peers_known : "–";
+    const nodes = mesh ? mesh.peers_known : 0;
+    if (mesh) {
+      const nd = await j(st.mesh + "/hy/mesh/nodes");
+      document.getElementById("nodes").innerHTML = nd.nodes.map(n => `
+        <div class="node"><span class="pill">${esc(n.verified > 0 ? "✓ موقعة" : "غير موقعة")}</span>
+        <b>${esc(n.name || n.url)}</b> <span class="${n.up ? "up" : "down"}">${n.up ? "● UP" : "○ DOWN"}</span>
+        <div class="shard">${esc(n.url)} · verified-handshakes=${n.verified}</div></div>`).join("") || "لا نظار بعد";
+    } else document.getElementById("nodes").innerHTML = 'mesh daemon غير حيّ — استعمل bin/hy-mesh';
+    const tk = (await j(API + "/api/organism")).tasks || [];
+    document.getElementById("zk").textContent = (await j(API + "/api/attestations")).attestations.length;
+    document.getElementById("tasks").innerHTML = tk.slice(0, 8).map(t => `
+      <div class="task"><b>${esc((t.goal || "").slice(0, 70))}</b>
+      <div class="shard">${t.status} · ${t.name} ${t.attestation ? '· ختم ZK ✓' : ''}</div></div>`).join("") || "لا مهام";
+    const evl = await j(API + "/api/evolve/latest").catch(() => null);
+    if (evl && evl.history) {
+      document.getElementById("evo").textContent = evl.best_fitness;
+      document.getElementById("evohist").innerHTML = evl.history.map(h =>
+        `<div>gen ${h.gen}: best=${h.best} avg=${h.avg} · ${esc(h.verdict)}</div>`).join("");
+    }
+    const ev = (await j(API + "/api/events")).events || [];
+    document.getElementById("events").innerHTML = ev.slice(0, 6).map(e =>
+      `<div>${esc(e.level)} · ${esc((e.message || "").slice(0, 90))}</div>`).join("");
+  } catch (e) { /* keep last state */ }
+}
+async function runOrganism() {
+  const g = document.getElementById("goal").value.trim();
+  if (!g) return alert("اكتب الهدف");
+  document.getElementById("goal").value = "";
+  await j(API + "/api/organism/run", { goal: g, function: "order_dedup" });
+  load();
+}
+async function evolve() {
+  const el = document.getElementById("evohist");
+  el.textContent = "التطور جارٍ…";
+  const rep = await j(API + "/api/evolve", { generations: 3, population: 5 });
+  el.innerHTML = rep.history ? rep.history.map(h =>
+    `gen ${h.gen}: best=${h.best} avg=${h.avg} verdict=${esc(h.verdict)}`).join("<br>") : "فشل";
+  load();
+}
+async function tensorRun() {
+  const el = document.getElementById("tensor");
+  el.textContent = "شراد ينفّذ عبر العقد…";
+  const out = await j(API + "/api/tensor", { n: 24, blocks: 2 });
+  el.textContent = "blocks=" + out.blocks + " · ms=" + out.ms +
+    " · مطابقة المرجع: " + (out.verified ? "✓ صحيحة" : "✗") +
+    " · per-worker " + JSON.stringify(out.per_worker || {});
+  load();
+}
+setInterval(load, 4000); load();
+</script>
+</body>
+</html>

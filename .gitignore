@@ -1,0 +1,9 @@
+*.pem
+*.pyc
+__pycache__/
+.DS_Store
+bin/
+*.db
+.env
+artifacts/
+keys/
